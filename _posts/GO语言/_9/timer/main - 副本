@@ -1,0 +1,43 @@
+package main
+
+import (
+	"time"
+)
+
+//检测指定的管道中是否有数据到来,如果1s内conn还没有数据，则会判断为超时
+func WaitChannel(input <-chan string) bool {
+	timer := time.NewTimer(1 * time.Second)
+	select {
+	case s := <-input:
+		timer.Stop()
+		println("get value ", s)
+		return true
+	case <-timer.C: // 超时
+		println("WaitChannel timeout!")
+		return false
+	}
+}
+
+func AfterDemo() {
+	println(time.Now().String())
+	<-time.After(1 * time.Second)
+	println(time.Now().String())
+}
+
+func AfterFuncDemo() {
+	println("AfterFuncDemo start: ", time.Now().String())
+	time.AfterFunc(1*time.Second, func() {
+		println("AfterFuncDemo end: ", time.Now().String())
+	})
+	time.Sleep(2 * time.Second) // 等待协程退出
+}
+func main() {
+	output := make(chan string)
+	go WaitChannel(output)
+	output <- "abc"
+
+	//go AfterDemo()
+	go AfterFuncDemo()
+	time.Sleep(5 * time.Second)
+
+}

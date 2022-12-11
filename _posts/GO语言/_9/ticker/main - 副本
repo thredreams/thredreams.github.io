@@ -1,0 +1,30 @@
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+//ticker是一个定时触发的计时器，
+//它会以一个间隔往channel发送整一个事件（当时时间），
+//而channel的接收者可以以固定的时间间隔从channel中读取事件
+
+func main() {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case t := <-ticker.C:
+				fmt.Println("Tick at", t)
+			}
+		}
+	}()
+	time.Sleep(1600 * time.Millisecond)
+
+	done <- true
+	//ticker.Stop()
+	fmt.Println("Ticker stopped")
+}

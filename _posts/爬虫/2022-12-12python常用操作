@@ -1,0 +1,120 @@
+# 文件操作
+
+## 文件遍历
+
+```python
+os.symlink(src_entity2id_path, org_entity2id_path) 
+if not os.path.exists(org_entity2id_path) else 1
+os.symlink(src_relation2id_path, org_relation2id_path) 
+if not os.path.exists(org_relation2id_path) else 1
+os.symlink(src_train_path, org_train_path) 
+if not os.path.exists(org_train_path) else 1
+os.symlink(src_valid_path, org_valid_path) 
+if not os.path.exists(org_valid_path) else 1
+os.symlink(src_test_path, org_test_path) 
+if not os.path.exists(org_test_path) else 1
+# 检查中的重复三元组
+for path in org_file_list:
+    with open(path,'r',encoding="utf-8") as f:
+        data = f.readlines()
+        len1=int(data[0])
+        lines = {line.strip('\n') for line in data if len(line.strip('\n').split('\t')) > 1}
+        len2=len(lines)
+        print(len1==len2)
+# 在文件头写入数据量
+for path in org_file_list:
+    with open(path, "r+", encoding="utf-8") as f:
+        data = f.readlines()
+        lines = [line.strip('\n').split('\t') for line in data if len(line.strip('\n').split('\t')) > 1]
+        f.seek(0)
+        f.write(str(len(lines)) + '\n')
+
+        if path == org_relation2id_path or path == org_entity2id_path:  
+        # 修改entity2id和relation2id的列顺序
+            lines = [[line[1], line[0]] for line in lines]
+        elif path == org_valid_path or path == org_train_path:  
+        # 修改train和valid的顺序
+            lines = [[line[0], line[2], line[1]] for line in lines]
+        # 有可能需要去除前缀0 第一次运行显示 似乎不需要
+        # 去除id的前缀(放在最后执行是为了方便调试，如果直接去了前缀，人工很难区分)
+        lines = ['\t'.join([string[4:]
+                            if string.startswith('ent_') 
+                            or string.startswith('rel_') else string
+                            for string in line]) + '\n'
+                 for line in lines]
+        f.writelines(lines)
+        f.truncate()
+```
+
+```python
+def generate_mid_file():
+    for root, directories, files in os.walk(target_dir):
+        for filename in files:
+            if filename.endswith(".txt"):
+                with open(os.path.join(root,filename), "r", encoding="utf-8") as f:
+                    data = f.readlines()
+                    target_name={re.findall(r"《(.+?)》",s)[0]:i for i,s in enumerate(data)}
+                    file_name_l=[fi for fi in os.listdir(source_dir) if fi.endswith('txt')]
+                    source2target={}
+                    for fn in file_name_l:
+                        _,tni=min([(Levenshtein.distance(fn,tn[0]),tn[1]) for tn in target_name.items()])
+                        source2target[fn]=data[tni]
+    for root, directories, files in os.walk(source_dir):
+        for filename in files:
+            if filename.endswith(".txt"):
+                mid_path=os.path.join(mid_dir2,filename)
+                path = os.path.join(root, filename)
+                with open(path, "r", encoding="utf-8") as f:
+                    data = f.readlines()
+                    lines2write = [source2target[filename]]
+                    lines=[]
+                    for line in data:
+                        ser_lines = [l  for l in re.split('。|！|；|\n', line) if len(l) > 1]
+                        lines.extend(ser_lines)
+                    labels=[0]*len(lines)
+                    label_summary=[]
+                    for summary_sentence in re.split('。|！|；|\n',source2target[filename]):
+                        if len(summary_sentence)>1:
+                            label_summary.extend(
+                                 sorted([(lines[i],Levenshtein.distance(summary_sentence,lines[i]),i) for i in range(len(lines))],key=lambda x:x[1])[:10])
+                    label_summary=sorted(label_summary,key=lambda x: x[1])
+                    seen = []
+                    seen0=[]
+                    for item in label_summary:
+                        if item[0] not in seen0:
+                            seen0.append(item[0])
+                            seen.append(item)
+                    for i in [l[2] for l in seen if l[1] < 30]:
+                        labels[i] = 1
+                    lines=[str(labels[i])+' '+lines[i]+'\n' for i in range(len(lines))]
+                    lines2write.extend(lines)
+                    with open(mid_path,'w',encoding='utf-8') as wf:
+                        wf.seek(0)
+                        wf.writelines(lines2write)
+                        wf.truncate()
+```
+
+# 列表生成式
+
+#嵌套列表生成式
+将根目录下的 md 文件组成一个列表
+
+```python
+mdlist=list([r+"\\"+f for (r,ds,fs) in os.walk(dir) for f in fs if f.endswith(".md")])
+```
+
+#文件重命名为 “修改时间+原文件名” #文件创建时间
+
+```python
+import os 
+import time
+[os.rename(f,"\\".join(f.split("\\")[:-1])+"\\"+time.strftime("%Y-%m-%d",time.localtime(os.stat(f).st_mtime))+'-'+f.split("\\")[-1]) for f in mdlist if not f.split("\\")[-1].startswith('2022')]
+# 修正原来的固定时间
+[os.rename(f,"\\".join(f.split("\\")[:-1])+time.strftime("%Y-%m-%d",time.localtime(os.stat(f).st_mtime))+'-'+f.split("\\")[-1].lstrip("2022-12-11-")) for f in mdlist if f.split("\\")[-1].startswith('2022')]
+# 重命名为"_源文件名"
+list([os.rename(r,'\\'.join(r.split("\\")[:-1])+'\\'+("_"+r.split("\\")[-1]).replace(" ","_")) for (r,ds,fs) in list(os.walk(dir))[1:] if not r.split("\\")[-1].startswith('.') and not r.split("\\")[-1].startswith("_") and os.path.exists(r)])
+```
+
+# 爬虫
+
+#爬虫

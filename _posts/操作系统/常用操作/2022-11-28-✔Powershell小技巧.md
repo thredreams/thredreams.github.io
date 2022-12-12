@@ -164,11 +164,11 @@ get-help get-process
 
 ##### 其他命令
 
--   get-date, 别名：date，获取系统当前时间
--   Get-Command，别名：gcm， 查找所有命令，可以通过通配符查找，如：get-command *process
--   write-output, 别名：echo、 write, 把东西输出发送到管道，从那里它可以通过管道传输到另一个cmdlet或者变量
--   write-host 直接输出到控制台
--   get-content，别名：cat, 输出文件内容到控制台
--   Install-Module module-name -Scope CurrentUser，从在线库中找到包并安装包到本地
--   Import-Module module-name，导入包
--   chcp, 修改当前的编码方式，默认 936 (GB2312)，可以通过`chcp 65001`设置为 UTF-8 格式
+- get-date, 别名：date，获取系统当前时间
+- Get-Command，别名：gcm， 查找所有命令，可以通过通配符查找，如：get-command *process
+- write-output, 别名：echo、 write, 把东西输出发送到管道，从那里它可以通过管道传输到另一个cmdlet或者变量
+- write-host 直接输出到控制台
+- get-content，别名：cat, 输出文件内容到控制台
+- Install-Module module-name -Scope CurrentUser，从在线库中找到包并安装包到本地
+- Import-Module module-name，导入包
+- chcp, 修改当前的编码方式，默认 936 (GB2312)，可以通过`chcp 65001`设置为 UTF-8 格式
